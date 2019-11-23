@@ -5,7 +5,7 @@ Spyder Editor
 This is a temporary script file.
 """
 import pandas as pd
-dataset = pd.read_csv('dataset.csv', delimiter=',')
+dataset = pd.read_csv('Dataset.csv', delimiter=',')
 """
 The data set has following columns:
 Vehicle_ID
@@ -35,7 +35,7 @@ Time_Headway
 Location	
 """
 
-dataset_new=dataset[dataset.Vehicle_ID < 41]
+dataset_new=dataset[dataset.Vehicle_ID < 201]
 dataset_new.to_csv("dataset_new.csv", index=False)
 
 dataset_new = pd.read_csv('dataset_new.csv', delimiter=',')

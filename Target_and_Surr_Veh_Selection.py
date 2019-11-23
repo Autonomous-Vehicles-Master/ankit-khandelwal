@@ -5,7 +5,7 @@ Created on Sun Nov 17 15:47:49 2019
 @author: Ankit
 """
 import pandas as pd
-import random
+import Data_Processing_and_Filtering
 
 def veh_selection(target):
     target_veh=0
@@ -19,24 +19,23 @@ def veh_selection(target):
     vehicle_fr=0
     vehicle_br=0
     
-    vehicle_lane=[0 for i in range(40)]
-    vehicle_length=[0 for i in range(40)]
+    vehicle_lane=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
     
-    vehicle_initial_y_position=[0 for i in range(40)]
-    delta_y_from_targ=[0 for i in range(40)]
+    vehicle_initial_y_position=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    delta_y_from_targ=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
     
-    vehicle_initial_x_position=[0 for i in range(40)]
-    delta_x_from_targ=[0 for i in range(40)]
+    vehicle_initial_x_position=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    delta_x_from_targ=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
     
-    delta_y_from_front=[0 for i in range(40)]
-    delta_y_from_right=[0 for i in range(40)]
-    delta_y_from_left=[0 for i in range(40)]
+    delta_y_from_front=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    delta_y_from_right=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    delta_y_from_left=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
     
     """
     Selection of Target Vehicle
     """
     target_veh=target
-    print('Target Vehicle is: '+str(target_veh))
+    #print('Target Vehicle is: '+str(target_veh))
     
     """
     Read data required to select other surrounding vehicles
@@ -44,9 +43,8 @@ def veh_selection(target):
     for p in range (40):
         dt = pd.read_csv("Individual_datasets_filtered/data_"+str(p+1)+".csv", delimiter=',')
         vehicle_lane[p]=dt['Lane_ID'][0]
-        vehicle_length[p]=dt['v_length'][0]
         vehicle_initial_y_position[p]=dt['Local_Y'][0]
-        vehicle_initial_x_position[p]=dt['Local_X'][0]
+        vehicle_initial_x_position[p]=dt['x_hat'][0]
         
     #print(vehicle_initial_y_position)
     #print(vehicle_initial_x_position)
@@ -83,10 +81,10 @@ def veh_selection(target):
     except ValueError:
         vehicle_r = 0
         
-    print('f='+str(vehicle_f))
-    print('b='+str(vehicle_b))
-    print('r='+str(vehicle_r))
-    print('l='+str(vehicle_l))
+    #print('f='+str(vehicle_f))
+    #print('b='+str(vehicle_b))
+    #print('r='+str(vehicle_r))
+    #print('l='+str(vehicle_l))
     
     """
     selection of vehicle ff
@@ -102,7 +100,7 @@ def veh_selection(target):
     except ValueError:
         vehicle_ff = 0
         
-    print('ff='+str(vehicle_ff))
+    #print('ff='+str(vehicle_ff))
     
     """
     selection of vehicle fl and bl
@@ -123,8 +121,8 @@ def veh_selection(target):
     except ValueError:
         vehicle_fl = 0
         
-    print('fl='+str(vehicle_fl))
-    print('bl='+str(vehicle_bl))
+    #print('fl='+str(vehicle_fl))
+    #print('bl='+str(vehicle_bl))
     
     """
     selection of vehicle fr and br
@@ -145,11 +143,11 @@ def veh_selection(target):
     except ValueError:
         vehicle_fr = 0
         
-    print('fr='+str(vehicle_fr))
-    print('br='+str(vehicle_br))
+    #print('fr='+str(vehicle_fr))
+    #print('br='+str(vehicle_br))
 
-
-veh_selection(random.randrange(1, 40))
+    return(target_veh,vehicle_fl,vehicle_ff,vehicle_fr,vehicle_l,vehicle_f,vehicle_r,vehicle_bl,vehicle_b,vehicle_br)
+    
 
 
 

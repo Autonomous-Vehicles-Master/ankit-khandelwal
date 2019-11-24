@@ -19,17 +19,17 @@ def veh_selection(target):
     vehicle_fr=0
     vehicle_br=0
     
-    vehicle_lane=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    vehicle_lane=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
     
-    vehicle_initial_y_position=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
-    delta_y_from_targ=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    vehicle_initial_y_position=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
+    delta_y_from_targ=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
     
-    vehicle_initial_x_position=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
-    delta_x_from_targ=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    vehicle_initial_x_position=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
+    delta_x_from_targ=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
     
-    delta_y_from_front=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
-    delta_y_from_right=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
-    delta_y_from_left=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used)]
+    delta_y_from_front=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
+    delta_y_from_right=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
+    delta_y_from_left=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
     
     """
     Selection of Target Vehicle

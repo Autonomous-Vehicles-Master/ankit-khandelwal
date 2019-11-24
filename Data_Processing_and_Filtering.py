@@ -13,9 +13,11 @@ from scipy.signal import savgol_filter
 from pandas import Series
 from sklearn.preprocessing import MinMaxScaler
 
-first_veh=1
-last_veh=200
-no_of_veh_used=(last_veh-first_veh)+1
+def number_of_vehicle():
+    first_veh=1
+    last_veh=200
+    no_of_veh_used=(last_veh-first_veh)+1
+    return(no_of_veh_used)
 
 def normalization_of_data(data_list):
     series = Series(data_list)
@@ -60,9 +62,9 @@ def lstm_data_processing(win_size_sg_filter):
     'Time_Headway',
     'Location']
     
-    counter_list=[0 for i in range(no_of_veh_used)]
-    counter_list_vel=[0 for i in range(no_of_veh_used)]
-    #print(counter_list) 
+    counter_list=[0 for i in range(number_of_vehicle())]
+    counter_list_vel=[0 for i in range(number_of_vehicle())]
+    #print(counter_list)
     ds1=[]
     ds2=[] 
 
@@ -72,7 +74,7 @@ def lstm_data_processing(win_size_sg_filter):
         counter_list[(dataset_final['Vehicle_ID'][j]-1)]=counter_list[(dataset_final['Vehicle_ID'][j]-1)]+1 
     #print(counter_list)
     min_no_of_instances = min(counter_list)
-    print(min_no_of_instances)
+    #print(min_no_of_instances)
     counter=counter_list
     dst= pd.read_csv('dataset_final.csv', delimiter=',',nrows=counter_list[0])
     
@@ -84,7 +86,7 @@ def lstm_data_processing(win_size_sg_filter):
     
     ds1.to_csv("Individual_datasets/data_1.csv", index=False)
     
-    for k1 in range(no_of_veh_used-1):
+    for k1 in range(number_of_vehicle()-1):
         counter[k1+1]=counter[k1+1]+counter[k1]
         ds1=0
         ds2=0
@@ -118,7 +120,7 @@ def lstm_data_processing(win_size_sg_filter):
     for j in range(0,dataset_LSTM.shape[0],1):
         counter_list_vel[(dataset_LSTM['Vehicle_ID'][j]-1)]=counter_list_vel[(dataset_LSTM['Vehicle_ID'][j]-1)]+1
     #print(counter_list_vel)
-    for k in range(no_of_veh_used):
+    for k in range(number_of_vehicle()):
         for l in range(0,counter_list_vel[k],1):
             if(l==0):
                 x_vel[m]=dataset_LSTM['Local_X'][l]
@@ -188,7 +190,7 @@ def lstm_data_processing(win_size_sg_filter):
     
     ds1.to_csv("Individual_datasets_updated/data_1.csv", index=False)
     counter1=counter_list_vel
-    for k1 in range(no_of_veh_used-1):
+    for k1 in range(number_of_vehicle()-1):
         counter1[k1+1]=counter1[k1+1]+counter1[k1]
         ds1=0
         ds2=0
@@ -203,7 +205,7 @@ def lstm_data_processing(win_size_sg_filter):
     if(os.path.isdir('Individual_datasets_filtered')==False):     
         os.mkdir('Individual_datasets_filtered')
     
-    for k1 in range(no_of_veh_used):
+    for k1 in range(number_of_vehicle()):
         #print(datasetlist[k1])
         x_vel_hat=[0 for i in range(5500)]
         y_vel_hat=[0 for i in range(5500)]
@@ -246,10 +248,15 @@ def lstm_data_processing(win_size_sg_filter):
     read_data=pd.read_csv('LSTM_dts.csv', delimiter=',')  
     
     x_hat_min=min(read_data['x_hat'])
+    #print("x_hat_min="+str(x_hat_min))
     local_y_min=min(read_data['Local_Y'])
+    #print("local_y_min="+str(local_y_min))
     x_vel_hat_min=min(read_data['x_Vel_hat'])
+    #print("x_vel_hat_min="+str(x_vel_hat_min))
     y_vel_hat_min=min(read_data['y_Vel_hat'])
+    #print("y_vel_hat_min="+str(y_vel_hat_min))
     v_type_min=min(read_data['v_Type'])
+    #print("v_type_min="+str(v_type_min))
     
     dst= pd.read_csv('Individual_datasets_filtered/data_1.csv', delimiter=',')
     dst= dst.to_csv("Individual_datasets_filtered/data_0.csv", index=False)
@@ -327,7 +334,7 @@ def lstm_data_processing(win_size_sg_filter):
                   'x_vel_hat_n',
                   'y_vel_hat_n']
     
-    counter2=[0 for i in range(no_of_veh_used+1)]
+    counter2=[0 for i in range(number_of_vehicle()+1)]
     
     for j in range(0,dst_norm.shape[0],1):
         counter2[(dst_norm['Vehicle_ID'][j])]=counter2[(dst_norm['Vehicle_ID'][j])]+1
@@ -342,7 +349,7 @@ def lstm_data_processing(win_size_sg_filter):
     
     ds0.to_csv("Individual_datasets_normalized/data_0.csv", index=False)
     
-    for k1 in range(0,no_of_veh_used,1):
+    for k1 in range(0,number_of_vehicle(),1):
         counter2[k1+1]=counter2[k1+1]+counter2[k1]
         ds1=0
         ds1= pd.read_csv('LSTM_Normalized.csv', delimiter=',',skiprows=counter2[k1], nrows=counter2[k1+1]-counter2[k1],names=colnames_new1, na_values=" ")

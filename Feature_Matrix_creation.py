@@ -4,20 +4,21 @@ import Data_Processing_and_Filtering
 import numpy as np
 import sys
 
-
-counter=[0 for i in range(Data_Processing_and_Filtering.no_of_veh_used+1)]
-ds = pd.read_csv('LSTM_Normalized.csv', delimiter=',')
-
-for num in range(0,ds.shape[0],1):
-        counter[(ds['Vehicle_ID'][num])]=counter[(ds['Vehicle_ID'][num])]+1
-min_no_of_instances = min(counter)-4
+def number_of_instances():
+    counter=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle()+1)]
+    ds = pd.read_csv('LSTM_Normalized.csv', delimiter=',')
+    
+    for num in range(0,ds.shape[0],1):
+            counter[(ds['Vehicle_ID'][num])]=counter[(ds['Vehicle_ID'][num])]+1
+    no_of_instances = min(counter)-4
+    return(no_of_instances)
 #print(min_no_of_instances)
 
 #Data_Processing_and_Filtering.lstm_data_processing(11) 
 
 def Feature_Matrix_creation(v_id):
     vehicle=Target_and_Surr_Veh_Selection.veh_selection(v_id)
-    
+    min_no_of_instances=number_of_instances()
     df_tar=pd.read_csv('Individual_datasets_normalized/data_'+str(vehicle[0])+'.csv', delimiter=',', nrows=min_no_of_instances)
     if(df_tar['Vehicle_ID'][10]!=vehicle[0]):
         raise NameError('Data is not sorted properly')

@@ -5,7 +5,7 @@ Created on Sun Nov 10 14:38:26 2019
 @author: Ankit
 """
 import numpy as np
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import LSTM
 from keras.layers import Dense
 from matplotlib import pyplot as plt
@@ -15,9 +15,10 @@ import Data_Processing_and_Filtering
 import Feature_Matrix_creation
 
 test_set_size=10
-veh_to_predict=195
+cv_set_size=50
+veh_to_predict=194
 
-Min_Max=Data_Processing_and_Filtering.lstm_data_processing(11)
+Data_Processing_and_Filtering.lstm_data_processing(11)
 
 read_data=pd.read_csv('LSTM_dts.csv', delimiter=',')  
 
@@ -46,24 +47,55 @@ vr=0
 v_y_pre=[t for t in range(min_nu_of_instances)]
 vp=0
  
-X, Y = Feature_Matrix_creation.Feature_Matrix_creation(1)
+def define_model():
+    X, Y = Feature_Matrix_creation.Feature_Matrix_creation(1)
+    loss_train = [0 for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
+    loss_cv = [0 for t in range(cv_set_size)]
+    indexer_train=[t for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
+    indexer_cv = [t for t in range(cv_set_size)]
+    # define model
+    model = Sequential()
+    model.add(LSTM(256, input_shape=(X.shape[0], X.shape[1]),return_sequences=True))
+    model.add(Dense(256, activation= 'linear' ))
+    model.add(Dense(128, activation= 'linear' ))
+    model.add(Dense(2, activation= 'linear' ))
+    model.compile(loss= 'mean_squared_error' , optimizer= 'adam' )
+    print(model.summary())
+    
+    #Train Model
+    for i in range(1,Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size)+1,1):
+        X, Y = Feature_Matrix_creation.Feature_Matrix_creation(i)
+        X_train = np.reshape(X, (1, X.shape[0], X.shape[1]))
+        Y_train = np.reshape(Y, (1, Y.shape[0], Y.shape[1]))
+        model.fit(X_train, Y_train, epochs=1, verbose=2, shuffle=False)
+        loss_train[i-1]= model.evaluate(X_train, Y_train, verbose=2)
+    
+    model.save('LSTM.h5')
+    
+    #Cross Validate
+    k=0
+    for j in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size)+1,
+                   Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)+1,1):
+        X, Y = Feature_Matrix_creation.Feature_Matrix_creation(j)
+        X_train = np.reshape(X, (1, X.shape[0], X.shape[1]))
+        Y_train = np.reshape(Y, (1, Y.shape[0], Y.shape[1]))
+        loss_cv[k]= model.evaluate(X_train, Y_train, verbose=2)
+        k=k+1
+        
+    # Plot training & validation loss values
+    plt.plot(indexer_train,loss_train)
+    plt.plot(indexer_cv,loss_cv, c='r')
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.show()
+        
 
-# define model
-model = Sequential()
-model.add(LSTM(256, input_shape=(X.shape[0], X.shape[1]),return_sequences=True))
-model.add(Dense(256, activation= 'linear' ))
-model.add(Dense(128, activation= 'linear' ))
-model.add(Dense(2, activation= 'linear' ))
-model.compile(loss= 'mean_squared_error' , optimizer= 'adam' )
-print(model.summary())
 
-#Train Model
-for i in range(1,Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)+1,1):
-    X, Y = Feature_Matrix_creation.Feature_Matrix_creation(i)
-    X_train = np.reshape(X, (1, X.shape[0], X.shape[1]))
-    Y_train = np.reshape(Y, (1, Y.shape[0], Y.shape[1]))
-    model.fit(X_train, Y_train, epochs=1, verbose=2, shuffle=False)    
+define_model()
 
+model=load_model('LSTM.h5')
 
 #Predict Results
 X1, Y1 = Feature_Matrix_creation.Feature_Matrix_creation(veh_to_predict)

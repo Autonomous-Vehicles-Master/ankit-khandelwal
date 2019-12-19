@@ -42,7 +42,17 @@ dataset_new.to_csv("dataset_new.csv", index=False)
 
 dataset_new = pd.read_csv('dataset_new.csv', delimiter=',')
 
+# Get names of indexes for which column Age has value 30
+indexNames = dataset_new[ dataset_new['Lane_ID'] > 7 ].index
+ 
+# Delete these row indexes from dataFrame
+dataset_new.drop(indexNames , inplace=True)
+
 dataset_final=dataset_new.sort_values(by=["Vehicle_ID"], ascending=True)
+
+Lane_ID_max=max(dataset_final['Lane_ID'])
+print("Lane_ID_max="+str(Lane_ID_max))
+
 dataset_final.to_csv("dataset_in_git.csv", index=False)
 '''
 df = pd.DataFrame(dataset_new,columns=['Local_X','Global_Time'])

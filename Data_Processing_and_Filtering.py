@@ -15,7 +15,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 def number_of_vehicle():
     first_veh=1
-    last_veh=200
+    last_veh=600
     no_of_veh_used=(last_veh-first_veh)+1
     return(no_of_veh_used)
 
@@ -65,6 +65,7 @@ def lstm_data_processing(win_size_sg_filter):
     counter_list=[0 for i in range(number_of_vehicle())]
     counter_list_vel=[0 for i in range(number_of_vehicle())]
     #print(counter_list)
+    ds0=[]
     ds1=[]
     ds2=[] 
 
@@ -95,110 +96,63 @@ def lstm_data_processing(win_size_sg_filter):
         ds2=ds1[:min_no_of_instances] 
         ds2.to_csv("Individual_datasets/data_"+str(k1+2)+".csv", index=False)
     #print(counter)
-        
-    """
-    Combine all csv files
-    """
-    path = 'Individual_datasets'                     # use your path
-    all_files = glob.glob(os.path.join(path, "*.csv"))     # advisable to use os.path.join as this makes concatenation OS independent
-    
-    df_from_each_file = (pd.read_csv(f) for f in all_files)
-    concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
-    concatenated_df.to_csv("dataset_LSTM.csv", index=False)
-    # doesn't create a list, nor does it append to one  
     
     """
-    Calculate velocities and update dataset. To calculate velocities time is considered as 1 ms, so only difference of x and y direction. 
-    """      
-    dataset_LSTM1 = pd.read_csv('dataset_LSTM.csv', delimiter=',')
-    dataset_LSTM = dataset_LSTM1.sort_values(by=["Vehicle_ID"], ascending=True)
-    m=0
-    x_vel=[0 for i in range(dataset_LSTM.shape[0])]
-    y_vel=[0 for i in range(dataset_LSTM.shape[0])]
-    Indexer=[0 for i in range(dataset_LSTM.shape[0])]
-    v_Type=[0 for i in range(dataset_LSTM.shape[0])]
-    for j in range(0,dataset_LSTM.shape[0],1):
-        counter_list_vel[(dataset_LSTM['Vehicle_ID'][j]-1)]=counter_list_vel[(dataset_LSTM['Vehicle_ID'][j]-1)]+1
+    Calculate velocities and update dataset. To calculate velocities time is considered as 100 ms, so only difference of x and y direction. 
+    """
+    if(os.path.isdir('Individual_datasets_updated')==False):
+        os.mkdir('Individual_datasets_updated')      
+    counter_list_vel=[min_no_of_instances for i in range(number_of_vehicle())]
     #print(counter_list_vel)
     for k in range(number_of_vehicle()):
+        x_vel=[0 for i in range(min_no_of_instances)]
+        y_vel=[0 for i in range(min_no_of_instances)]
+        Indexer=[0 for i in range(min_no_of_instances)]
+        v_Type=[0 for i in range(min_no_of_instances)]
+        ds0=pd.read_csv("Individual_datasets/data_"+str(k+1)+".csv", delimiter=',',nrows=min_no_of_instances)
+        ds0=ds0.sort_values(by=["Local_Y"], ascending=True)
         for l in range(0,counter_list_vel[k],1):
             if(l==0):
-                x_vel[m]=dataset_LSTM['Local_X'][l]
-                y_vel[m]=0
-                Indexer[m]=0
+                x_vel[l]=ds0['Local_X'][l]
+                y_vel[l]=0
+                Indexer[l]=0
             else:
-                x_vel[m]=(dataset_LSTM['Local_X'][l]-dataset_LSTM['Local_X'][l-1])
-                y_vel[m]=(dataset_LSTM['Local_Y'][l]-dataset_LSTM['Local_Y'][l-1])
-                Indexer[m]=l
-            v_Type[m]=dataset_LSTM['v_Class'][l]-2
-            m=m+1
-    dataset_LSTM['x_Vel']=x_vel
-    dataset_LSTM['y_Vel']=y_vel
-    dataset_LSTM['Indexer']=Indexer
-    dataset_LSTM['v_Type']=v_Type
-    dataset_LSTM.to_csv("dataset_LSTM.csv", index=False)
-    
-    colnames.append('x_Vel')
-    colnames.append('y_Vel')
-    colnames.append('Indexer')
-    
-    
-    """
-    Drop not usefuol data from dataset
-    """
-    dataset_useful = dataset_LSTM.drop(['Frame_ID',
-                                        'Total_Frames',
-                                        'v_Width',
-                                        'v_Vel',
-                                        'v_Acc',
-                                        'v_Class',
-                                        'O_Zone',
-                                        'D_Zone',
-                                        'Int_ID',
-                                        'Section_ID',
-                                        'Direction',
-                                        'Movement',
-                                        'Preceding',
-                                        'Following',
-                                        'Space_Headway',
-                                        'Time_Headway',
-                                        'Location'], axis=1)
-    
-    dataset_useful.to_csv("dataset_useful.csv", index=False)
-    
-    """
-    Sort individual vehicle dataset again
-    """
-    colnames_new=['Vehicle_ID', 	
-                  'Global_Time',	
-                  'Local_X',	
-                  'Local_Y',	
-                  'Global_X', 	
-                  'Global_Y',
-                  'v_length',
-                  'Lane_ID',	
-                  'x_Vel',	
-                  'y_Vel',	
-                  'Indexer',	
-                  'v_Type']
-    dst= pd.read_csv('dataset_useful.csv', delimiter=',',nrows=min_no_of_instances)
-    
-    ds1=dst.sort_values(by=["Local_Y"], ascending=True)
-    
-    if(os.path.isdir('Individual_datasets_updated')==False):
-        os.mkdir('Individual_datasets_updated')
-    
-    ds1.to_csv("Individual_datasets_updated/data_1.csv", index=False)
-    counter1=counter_list_vel
-    for k1 in range(number_of_vehicle()-1):
-        counter1[k1+1]=counter1[k1+1]+counter1[k1]
+                x_vel[l]=(ds0['Local_X'][l]-ds0['Local_X'][l-1])
+                y_vel[l]=(ds0['Local_Y'][l]-ds0['Local_Y'][l-1])
+                Indexer[l]=l
+            v_Type[l]=ds0['v_Class'][l]
+        
+        ds0['x_Vel']=x_vel
+        ds0['y_Vel']=y_vel
+        ds0['Indexer']=Indexer
+        ds0['v_Type']=v_Type
+        """
+        Drop not usefuol data from dataset
+        """
+        ds1 = ds0.drop(['Frame_ID',
+                        'Total_Frames',
+                        'v_Width',
+                        'v_Vel',
+                        'v_Acc',
+                        'v_Class',
+                        'O_Zone',
+                        'D_Zone',
+                        'Int_ID',
+                        'Section_ID',
+                        'Direction',
+                        'Movement',
+                        'Preceding',
+                        'Following',
+                        'Space_Headway',
+                        'Time_Headway',
+                        'Location'], axis=1)
+        ds1.to_csv("Individual_datasets_updated/data_"+str(k+1)+".csv", index=False)
+        colnames.append('x_Vel')
+        colnames.append('y_Vel')
+        colnames.append('Indexer')
+        ds0=0
         ds1=0
-        ds2=0
-        ds1=pd.read_csv('dataset_useful.csv', delimiter=',',skiprows=counter1[k1], nrows=counter1[k1+1]-counter1[k1],names=colnames_new, na_values=" ")
-        ds2=ds1.sort_values(by=["Local_Y"], ascending=True)   
-        ds2.to_csv("Individual_datasets_updated/data_"+str(k1+2)+".csv", index=False)
-    #print(counter1)
-    
+   
     """
     Filter noise from velocities and positions
     """ 
@@ -207,9 +161,9 @@ def lstm_data_processing(win_size_sg_filter):
     
     for k1 in range(number_of_vehicle()):
         #print(datasetlist[k1])
-        x_vel_hat=[0 for i in range(5500)]
-        y_vel_hat=[0 for i in range(5500)]
-        x_hat=[0 for i in range(5500)]
+        x_vel_hat=[0 for i in range(min_no_of_instances)]
+        y_vel_hat=[0 for i in range(min_no_of_instances)]
+        x_hat=[0 for i in range(min_no_of_instances)]
         ds1=0
         ds1=pd.read_csv('Individual_datasets_updated/data_'+str(k1+1)+'.csv', delimiter=',')
         ds1=ds1.sort_values(by=["Indexer"], ascending=True)
@@ -274,7 +228,7 @@ def lstm_data_processing(win_size_sg_filter):
     for d in range(0,ds0.shape[0],1):
         Vehicle_ID_0[d]=0
         Local_Y_0[d]=local_y_min-1
-        Lane_ID_0[d]=0
+        Lane_ID_0[d]=-1
         Indexer_0[d]=d
         v_Type_0[d]=v_type_min-1
         x_hat_0[d]=x_hat_min-1
@@ -307,13 +261,15 @@ def lstm_data_processing(win_size_sg_filter):
     """
     normalized_data=pd.read_csv('LSTM_dt_to_norm.csv', delimiter=',')    
     
+    normalized_data['Lane_ID_n']=normalization_of_data(normalized_data['Lane_ID'])
     normalized_data['Local_Y_n']=normalization_of_data(normalized_data['Local_Y'])
     normalized_data['v_Type_n']=normalization_of_data(normalized_data['v_Type'])
     normalized_data['x_hat_n']=normalization_of_data(normalized_data['x_hat'])
     normalized_data['x_vel_hat_n']=normalization_of_data(normalized_data['x_Vel_hat'])
     normalized_data['y_vel_hat_n']=normalization_of_data(normalized_data['y_Vel_hat'])
     
-    normalized_data=normalized_data.drop(['Local_Y',	
+    normalized_data=normalized_data.drop(['Local_Y',
+                                          'Lane_ID',
                                           'v_Type',		
                                           'x_hat', 	
                                           'x_Vel_hat',
@@ -325,14 +281,16 @@ def lstm_data_processing(win_size_sg_filter):
     Again create all individual csv with normalized data
     """
     dst_norm= pd.read_csv('LSTM_Normalized.csv', delimiter=',')
+    dst_norm= dst_norm.sort_values(by=["Vehicle_ID"], ascending=True)
     colnames_new1=['Vehicle_ID', 	
-                  'Lane_ID',		
-                  'Indexer',
-                  'Local_Y_n',
-                  'v_Type_n',
-                  'x_hat_n',
-                  'x_vel_hat_n',
-                  'y_vel_hat_n']
+                   #'Lane_ID',
+                   'Indexer',
+                   'Lane_ID_n',	
+                   'Local_Y_n',
+                   'v_Type_n',
+                   'x_hat_n',
+                   'x_vel_hat_n',
+                   'y_vel_hat_n']
     
     counter2=[0 for i in range(number_of_vehicle()+1)]
     

@@ -19,26 +19,33 @@ test_set_size=10
 cv_set_size=50
 veh_to_predict=595
 
+#'''
+#data pre-processing
 Data_Processing_and_Filtering.lstm_data_processing(11)
+#'''
 
 read_data=pd.read_csv('LSTM_dt_to_norm.csv', delimiter=',')  
 
-x_hat_min=min(read_data['x_hat'])+1
-print("x_hat_min="+str(x_hat_min*0.3048))
-y_vel_hat_min=min(read_data['y_Vel_hat'])+1
-print("y_vel_hat_min="+str(y_vel_hat_min*0.3048))
+x_hat_min=min(read_data['x_hat'])+1 #+1 because min value was min-1 to create vehicle0
+print("x_hat_min="+str(x_hat_min*0.3048)) # feet to meters
+y_vel_hat_min=min(read_data['y_Vel_hat'])+1 #+1 because min value was min-1 to create vehicle0
+print("y_vel_hat_min="+str(y_vel_hat_min*0.3048)) # feet to meters
 
 x_hat_max=max(read_data['x_hat'])
-print("x_hat_max="+str(x_hat_max*0.3048))
+print("x_hat_max="+str(x_hat_max*0.3048))# feet to meters
 y_vel_hat_max=max(read_data['y_Vel_hat'])
-print("y_vel_hat_max="+str(y_vel_hat_max*0.3048))
+print("y_vel_hat_max="+str(y_vel_hat_max*0.3048))# feet to meters
 
-min_nu_of_instances=200#Feature_Matrix_creation.number_of_instances()
+min_nu_of_instances=150 # (Prediction time)x10 because frequency is 10 hz. unit is x100ms
+#Feature_Matrix_creation.number_of_instances()
 
 print("Prediction is done for "+str(min_nu_of_instances/10)+" Seconds")
 
 x_hat_error=[0 for t in range(min_nu_of_instances)]
 y_vel_hat_error=[0 for t in range(min_nu_of_instances)]
+
+x_hat_error_abs=[0 for t in range(min_nu_of_instances)]
+y_vel_hat_error_abs=[0 for t in range(min_nu_of_instances)]
 
 x_hat_error_modified=[0 for t in range(min_nu_of_instances)]
 y_vel_hat_error_modified=[0 for t in range(min_nu_of_instances)]
@@ -54,8 +61,9 @@ v_y_pre=[t for t in range(min_nu_of_instances)]
 vp=0
 
 Loss=0
- 
-def define_model():
+
+# define, train and crossvalidate model 
+def define_model(): 
     X, Y = Feature_Matrix_creation.Feature_Matrix_creation(1)
     loss_train = [0 for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
     loss_cv = [0 for t in range(cv_set_size)]
@@ -79,8 +87,9 @@ def define_model():
         print(i)
         X_train = np.reshape(X, (1, X.shape[0], X.shape[1]))
         Y_train = np.reshape(Y, (1, Y.shape[0], Y.shape[1]))
-        model.fit(X_train, Y_train, epochs=1, verbose=2, shuffle=False)
-        loss_train[i-1]= model.evaluate(X_train, Y_train, verbose=2)
+        history=model.fit(X_train, Y_train, epochs=1, verbose=2, shuffle=False)
+        print(history.history)
+        loss_train[i-1]=history.history['mean_squared_error']
     
     model.save('LSTM.h5')
     #model=load_model('LSTM.h5')
@@ -103,6 +112,13 @@ def define_model():
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
+    
+     # Plot training & validation loss values
+    plt.plot(indexer_train,mse_train)
+    plt.title('MSE: Mean squared Error')
+    plt.ylabel('Error')
+    plt.xlabel('Epoch')
+    plt.show()
         
     return(statistics.mean(loss_train))
 
@@ -120,44 +136,53 @@ predictions = model.predict(X_test, verbose=2)
 
 ds = pd.read_csv('Individual_datasets_filtered/data_'+str(veh_to_predict)+'.csv', delimiter=',', nrows=min_nu_of_instances)
 ds = ds.sort_values(by=["Indexer"], ascending=True) 
-l_id_ref= ds['Lane_ID']
 
+# calculate errors with and without sign
 for i in range(min_nu_of_instances):
-    x_hat_error[i]=predictions[0,i,0]-Y1[i,0]
-    y_vel_hat_error[i]=predictions[0,i,1]-Y1[i,1]
+    x_hat_error[i]=(predictions[0,i,0]-Y1[i,0])
+    y_vel_hat_error[i]=(predictions[0,i,1]-Y1[i,1])
+    x_hat_error_abs[i]=abs(predictions[0,i,0]-Y1[i,0])
+    y_vel_hat_error_abs[i]=abs(predictions[0,i,1]-Y1[i,1])
 
+#calculate average static error
 x_hat_error_avg=statistics.mean(x_hat_error)
 y_vel_hat_error_avg=statistics.mean(y_vel_hat_error)
 
-print('x_hat_error='+str(x_hat_error_avg*(x_hat_max-x_hat_min)*0.3048))
-print('y_vel_hat_error='+str(y_vel_hat_error_avg*(y_vel_hat_max-y_vel_hat_min)*0.3048))
+# cslculate average absolute error
+x_hat_error_avg_abs=statistics.mean(x_hat_error_abs)
+y_vel_hat_error_avg_abs=statistics.mean(y_vel_hat_error_abs)
 
+print('x_hat_error='+str(x_hat_error_avg_abs*(x_hat_max-x_hat_min)*0.3048))
+print('y_vel_hat_error='+str(y_vel_hat_error_avg_abs*(y_vel_hat_max-y_vel_hat_min)*0.3048))
 
+#calculate actual data and update to SI units
 for num in predictions[0,:min_nu_of_instances,0]:
     #num = (num * (x_hat_max-x_hat_min))+x_hat_min
     num = ((num-x_hat_error_avg) * (x_hat_max-x_hat_min))+x_hat_min
-    x_pre[xp]=num*0.3048
+    x_pre[xp]=num*0.3048 #feet to meters
     xp=xp+1
      
 for num in predictions[0,:min_nu_of_instances,1]:
     #num = (num * (y_vel_hat_max-y_vel_hat_min))+y_vel_hat_min
     num = ((num-y_vel_hat_error_avg) * (y_vel_hat_max-y_vel_hat_min))+y_vel_hat_min
-    v_y_pre[vp]=num*0.3048*10
+    v_y_pre[vp]=num*0.3048*10 #feet/100ms to m/s
     vp=vp+1
-     
+
+#update reference value unit to SI units     
 for num in Y1[:min_nu_of_instances,0]:
     num = (num * (x_hat_max-x_hat_min))+x_hat_min
-    x_ref[xr]=num*0.3048
+    x_ref[xr]=num*0.3048 #feet to meters
     xr=xr+1
      
 for num in Y1[:min_nu_of_instances,1]:
     num = (num * (y_vel_hat_max-y_vel_hat_min))+y_vel_hat_min
-    v_y_ref[vr]=num*0.3048*10
+    v_y_ref[vr]=num*0.3048*10 #feet/100ms to m/s
     vr=vr+1
 
+#calculate modified absolute errors
 for k in range(min_nu_of_instances):
-    x_hat_error_modified[k]=x_pre[k]-x_ref[k]
-    y_vel_hat_error_modified[k]=v_y_pre[k]-v_y_ref[k]
+    x_hat_error_modified[k]=abs(x_pre[k]-x_ref[k])
+    y_vel_hat_error_modified[k]=abs(v_y_pre[k]-v_y_ref[k])
 
 x_hat_error_modified_average=statistics.mean(x_hat_error_modified)
 y_vel_hat_error_modified_average=statistics.mean(y_vel_hat_error_modified)
@@ -186,23 +211,23 @@ plt.show()
 #plt.plot(index,l_id_pre,c='g')
 plt.plot(index,x_pre,c='r')
 plt.plot(index,x_ref)
-plt.rcParams["figure.figsize"] = (20,3)
-plt.xticks(np.arange(0, min_nu_of_instances, 10))
-plt.yticks(np.arange(0, 84*0.3048, 12*0.3048))
+plt.xticks(np.arange(0, min_nu_of_instances, 5))
+plt.yticks(np.arange(0, 84*0.3048, 12*0.3048)) #to show lane markings
 plt.grid(axis='y', linestyle='-')
-plt.xlabel('time in 100 ms') 
-plt.ylabel('Lateral Position') 
-plt.title('Lateral Position Comparision')
+plt.xlabel('time(x100 ms)') 
+plt.ylabel('Lateral Position(m)') 
+#plt.title('Lateral Position Comparision')
 plt.legend(['Predicted', 'Actual'], loc='upper left')
+plt.rcParams["figure.figsize"] = (20,3)
 plt.show()
 #plt.legend()
 
 plt.plot(index,v_y_pre,c='r')
 plt.plot(index,v_y_ref)
-plt.xticks(np.arange(0, min_nu_of_instances, 10))
-plt.xlabel('time in 100 ms') 
-plt.ylabel('Longitudenal Velocity') 
-plt.title('Longitudenal Velocity Comparision')
+plt.xticks(np.arange(0, min_nu_of_instances, 5))
+plt.xlabel('time(x100 ms)') 
+plt.ylabel('Longitudenal Velocity(m/s)') 
+#plt.title('Longitudenal Velocity Comparision')
 plt.legend(['Predicted', 'Actual'], loc='upper left')
 plt.rcParams["figure.figsize"] = (20,3)
 plt.show()

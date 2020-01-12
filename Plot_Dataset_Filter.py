@@ -24,15 +24,16 @@ def plot_dataset_filter(vehicle_id):
     ds11 = ds11.sort_values(by=["Local_Y"], ascending=True)
     ds12 = ds12.sort_values(by=["Local_Y"], ascending=True)    
     
-    a=ds11['y_Vel']
-    b=ds12['y_Vel_hat']
+    a=ds11['y_Vel']*3.084 #feet/100ms to m/s
+    b=ds12['y_Vel_hat']*3.084 #feet/100ms to m/s
     
-    plt.plot(index,a,c='r')
-    plt.plot(index,b)
-    plt.xlabel('time in 100ms') 
-    plt.ylabel('Longitudenal Velocity') 
-    plt.title('Longitudenal Velocity Comparision')
+    plt.plot(index[:201],a[:201],c='r')
+    plt.plot(index[:201],b[:201])
+    plt.xlabel('time(x100ms)') 
+    plt.ylabel('Longitudenal Velocity(m/s)') 
+    #plt.title('Longitudenal Velocity Comparision')
     plt.legend(['Actual', 'Filtered'], loc='upper left')
+    plt.rcParams["figure.figsize"] = (20,3)
     plt.show()   
     
-plot_dataset_filter(1)
+plot_dataset_filter(595)

@@ -76,7 +76,7 @@ def define_model():
     model.add(Dense(256, activation= 'linear' ))
     model.add(Dense(128, activation= 'linear' ))
     model.add(Dense(2, activation= 'linear' ))
-    model.compile(loss= 'mean_squared_error' , optimizer= 'adam' )
+    model.compile(loss= 'mean_squared_error' , optimizer= 'adam' , metrics=['mean_squared_error'])
     print(model.summary())
     
     #model=load_model('LSTM.h5')

@@ -113,13 +113,6 @@ def define_model():
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
     
-     # Plot training & validation loss values
-    plt.plot(indexer_train,mse_train)
-    plt.title('MSE: Mean squared Error')
-    plt.ylabel('Error')
-    plt.xlabel('Epoch')
-    plt.show()
-        
     return(statistics.mean(loss_train))
 
 '''

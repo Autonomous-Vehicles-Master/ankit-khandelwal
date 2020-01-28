@@ -15,7 +15,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 def number_of_vehicle():
     first_veh=1
-    last_veh=600
+    last_veh=200
     no_of_veh_used=(last_veh-first_veh)+1
     return(no_of_veh_used)
 
@@ -63,6 +63,7 @@ def lstm_data_processing(win_size_sg_filter):
     'Location']
     
     counter_list=[0 for i in range(number_of_vehicle())]
+    counter_list_car=[0 for i in range(number_of_vehicle())]
     counter_list_vel=[0 for i in range(number_of_vehicle())]
     #print(counter_list)
     ds0=[]
@@ -74,27 +75,84 @@ def lstm_data_processing(win_size_sg_filter):
     for j in range(0,dataset_final.shape[0],1):
         counter_list[(dataset_final['Vehicle_ID'][j]-1)]=counter_list[(dataset_final['Vehicle_ID'][j]-1)]+1 
     #print(counter_list)
-    min_no_of_instances = min(counter_list)
-    #print(min_no_of_instances)
-    counter=counter_list
+    counter0=counter_list
     dst= pd.read_csv('dataset_final.csv', delimiter=',',nrows=counter_list[0])
     
     dst1=dst.sort_values(by=["Local_Y"], ascending=True)
-    ds1=dst1[:min_no_of_instances] 
+    frames=dst1['Total_Frames'][1]
+    #print(frames)
+    # Get names of indexes for which has total number of frames different
+    indexNames1 = dst1[ dst1['Total_Frames'] != frames ].index
+     
+    # Delete these row indexes from dataFrame
+    dst1.drop(indexNames1 , inplace=True)
     
     if(os.path.isdir('Individual_datasets')==False):
         os.mkdir('Individual_datasets')
     
-    ds1.to_csv("Individual_datasets/data_1.csv", index=False)
+    dst1.to_csv("Individual_datasets/data_1.csv", index=False)
     
+    for k1 in range(number_of_vehicle()-1):
+        counter0[k1+1]=counter0[k1+1]+counter0[k1]
+        indexNames2=0
+        ds1=0
+        ds2=0
+        ds1=pd.read_csv('dataset_final.csv', delimiter=',',skiprows=counter0[k1], nrows=counter_list[k1+1]-counter0[k1],names=colnames, na_values=" ")
+        ds2=ds1.sort_values(by=["Local_Y"], ascending=True)
+        #print(k1+2)
+        frames=ds2['Total_Frames'][1]
+        # Get names of indexes for which has total number of frames different
+        indexNames2 = ds2[ ds2['Total_Frames'] != frames].index
+        # Delete these row indexes from dataFrame
+        ds2.drop(indexNames2 , inplace=True)
+        ds2.to_csv("Individual_datasets/data_"+str(k1+2)+".csv", index=False)
+    #print(counter)
+    
+    """
+    Combine all csv files
+    """
+    path = 'Individual_datasets'                     # use your path
+    all_files = glob.glob(os.path.join(path, "*.csv"))     # advisable to use os.path.join as this makes concatenation OS independent
+    
+    df_from_each_file = (pd.read_csv(f) for f in all_files)
+    concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
+    concatenated_df.to_csv("LSTM_car.csv", index=False)
+    
+    dataset_fin = pd.read_csv('LSTM_car.csv', delimiter=',')
+    dataset_car=dataset_fin.sort_values(by=["Vehicle_ID"], ascending=True)
+    dataset_car.to_csv("LSTM_car1.csv", index=False)
+    for j in range(0,dataset_car.shape[0],1):
+        counter_list_car[(dataset_car['Vehicle_ID'][j]-1)]=counter_list_car[(dataset_car['Vehicle_ID'][j]-1)]+1 
+    #print(counter_list_car)
+    min_no_of_instances = min(counter_list_car)
+    #print(min_no_of_instances)
+    
+    dst=0
+    dst1=0
+    ds0=0
+    ds1=0
+    ds2=0
+    
+    counter=counter_list_car
+    dst= pd.read_csv('LSTM_car1.csv', delimiter=',',nrows=counter_list_car[0])
+    
+    dst1=dst.sort_values(by=["Local_Y"], ascending=True)
+    ds1=dst1[:min_no_of_instances]
+    
+    if(os.path.isdir('Individual_datasets_car')==False):
+        os.mkdir('Individual_datasets_car')
+    
+    ds1.to_csv("Individual_datasets_car/data_1.csv", index=False)
+    
+    k1=0
     for k1 in range(number_of_vehicle()-1):
         counter[k1+1]=counter[k1+1]+counter[k1]
         ds1=0
         ds2=0
-        ds1=pd.read_csv('dataset_final.csv', delimiter=',',skiprows=counter[k1], nrows=counter_list[k1+1]-counter[k1],names=colnames, na_values=" ")
+        ds1=pd.read_csv('LSTM_car1.csv', delimiter=',',skiprows=counter[k1], nrows=counter_list_car[k1+1]-counter[k1],names=colnames, na_values=" ")
         ds1=ds1.sort_values(by=["Local_Y"], ascending=True)
-        ds2=ds1[:min_no_of_instances] 
-        ds2.to_csv("Individual_datasets/data_"+str(k1+2)+".csv", index=False)
+        ds2=ds1[:min_no_of_instances]
+        ds2.to_csv("Individual_datasets_car/data_"+str(k1+2)+".csv", index=False)
     #print(counter)
     
     """
@@ -109,7 +167,7 @@ def lstm_data_processing(win_size_sg_filter):
         y_vel=[0 for i in range(min_no_of_instances)]
         Indexer=[0 for i in range(min_no_of_instances)]
         v_Type=[0 for i in range(min_no_of_instances)]
-        ds0=pd.read_csv("Individual_datasets/data_"+str(k+1)+".csv", delimiter=',',nrows=min_no_of_instances)
+        ds0=pd.read_csv("Individual_datasets_car/data_"+str(k+1)+".csv", delimiter=',',nrows=min_no_of_instances)
         ds0=ds0.sort_values(by=["Local_Y"], ascending=True)
         for l in range(0,counter_list_vel[k],1):
             if(l==0):
@@ -117,7 +175,7 @@ def lstm_data_processing(win_size_sg_filter):
                 y_vel[l]=0
                 Indexer[l]=0
             else:
-                x_vel[l]=(ds0['Local_X'][l]-ds0['Local_X'][l-1])
+                x_vel[l]=(ds0['Local_X'][l]-ds0['Local_X'][l-1]) #feet/100ms
                 y_vel[l]=(ds0['Local_Y'][l]-ds0['Local_Y'][l-1])
                 Indexer[l]=l
             v_Type[l]=ds0['v_Class'][l]
@@ -175,8 +233,7 @@ def lstm_data_processing(win_size_sg_filter):
         
         y_vel_hat= savgol_filter(ds1['y_Vel'], win_size_sg_filter, 3) 
         ds1['y_Vel_hat']=y_vel_hat  
-        ds1=ds1.drop(['Global_Time',	
-                      'Local_X',		
+        ds1=ds1.drop([ 'Local_X',		
                       'Global_X', 	
                       'Global_Y',
                       'v_length',	
@@ -283,7 +340,7 @@ def lstm_data_processing(win_size_sg_filter):
     dst_norm= pd.read_csv('LSTM_Normalized.csv', delimiter=',')
     dst_norm= dst_norm.sort_values(by=["Vehicle_ID"], ascending=True)
     colnames_new1=['Vehicle_ID', 	
-                   #'Lane_ID',
+                   'Global_Time',
                    'Indexer',
                    'Lane_ID_n',	
                    'Local_Y_n',

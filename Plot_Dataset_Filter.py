@@ -36,4 +36,4 @@ def plot_dataset_filter(vehicle_id):
     plt.rcParams["figure.figsize"] = (20,3)
     plt.show()   
     
-plot_dataset_filter(595)
+plot_dataset_filter(198)

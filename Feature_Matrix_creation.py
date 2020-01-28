@@ -10,7 +10,7 @@ def number_of_instances():
     
     for num in range(0,ds.shape[0],1):
             counter1[(ds['Vehicle_ID'][num])]=counter1[(ds['Vehicle_ID'][num])]+1
-    no_of_instances = min(counter1)-4
+    no_of_instances = min(counter1)-2
     return(no_of_instances)
 #print(min_no_of_instances)
 

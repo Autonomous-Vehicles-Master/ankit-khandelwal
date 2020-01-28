@@ -20,6 +20,7 @@ def veh_selection(target):
     vehicle_br=0
     
     vehicle_lane=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
+    global_time=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
     
     vehicle_initial_y_position=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
     delta_y_from_targ=[0 for i in range(Data_Processing_and_Filtering.number_of_vehicle())]
@@ -43,6 +44,7 @@ def veh_selection(target):
     for p in range (Data_Processing_and_Filtering.number_of_vehicle()):
         dt = pd.read_csv("Individual_datasets_filtered/data_"+str(p+1)+".csv", delimiter=',')
         vehicle_lane[p]=dt['Lane_ID'][0]
+        global_time[p]=dt['Global_Time'][0]
         vehicle_initial_y_position[p]=dt['Local_Y'][0]
         vehicle_initial_x_position[p]=dt['x_hat'][0]
         
@@ -54,9 +56,11 @@ def veh_selection(target):
     """
     for q in range (Data_Processing_and_Filtering.number_of_vehicle()):
         if(vehicle_lane[q]==vehicle_lane[target_veh-1]):
-            delta_y_from_targ[q]=vehicle_initial_y_position[q]-vehicle_initial_y_position[target_veh-1]
-        if(vehicle_lane[q]!=vehicle_lane[target_veh-1]):   
-            delta_x_from_targ[q]=vehicle_initial_x_position[q]-vehicle_initial_x_position[target_veh-1]
+            if(abs(global_time[target_veh]-global_time[q]) < 12000):
+                delta_y_from_targ[q]=vehicle_initial_y_position[q]-vehicle_initial_y_position[target_veh-1]
+        if(vehicle_lane[q]!=vehicle_lane[target_veh-1]):
+            if(abs(global_time[target_veh]-global_time[q]) < 12000):
+                delta_x_from_targ[q]=vehicle_initial_x_position[q]-vehicle_initial_x_position[target_veh-1]
             
     #print(delta_y_from_targ)
     #print(delta_x_from_targ)
@@ -89,9 +93,11 @@ def veh_selection(target):
     """
     selection of vehicle ff
     """
-    for r in range (Data_Processing_and_Filtering.number_of_vehicle()):
-        if(vehicle_lane[r]==vehicle_lane[vehicle_f-1]):
-            delta_y_from_front[r]=vehicle_initial_y_position[r]-vehicle_initial_y_position[vehicle_f-1]
+    if(vehicle_f!=0):
+        for r in range (Data_Processing_and_Filtering.number_of_vehicle()):
+            if(vehicle_lane[r]==vehicle_lane[vehicle_f-1]):
+                if(abs(global_time[target_veh]-global_time[r]) < 12000):
+                    delta_y_from_front[r]=vehicle_initial_y_position[r]-vehicle_initial_y_position[vehicle_f-1]
     
     #print(delta_y_from_front)
     
@@ -105,11 +111,13 @@ def veh_selection(target):
     """
     selection of vehicle fl and bl
     """
-    for s in range (Data_Processing_and_Filtering.number_of_vehicle()):
-        if(vehicle_lane[s]==vehicle_lane[vehicle_l-1]):
-            delta_y_from_left[s]=vehicle_initial_y_position[s]-vehicle_initial_y_position[vehicle_l-1]
+    if(vehicle_l!=0):
+        for s in range (Data_Processing_and_Filtering.number_of_vehicle()):
+            if(vehicle_lane[s]==vehicle_lane[vehicle_l-1]):
+                if(abs(global_time[target_veh]-global_time[s]) < 12000):
+                    delta_y_from_left[s]=vehicle_initial_y_position[s]-vehicle_initial_y_position[vehicle_l-1]
             
-    #print(delta_x_from_front)
+    #print(delta_y_from_left)
     
     try:
         vehicle_bl = delta_y_from_left.index(max([n for n in delta_y_from_left if n<0]))+1
@@ -127,10 +135,12 @@ def veh_selection(target):
     """
     selection of vehicle fr and br
     """
-    for t in range (Data_Processing_and_Filtering.number_of_vehicle()):
-        if(vehicle_lane[t]==vehicle_lane[vehicle_r-1]):
-            delta_y_from_right[t]=vehicle_initial_y_position[t]-vehicle_initial_y_position[vehicle_r-1]
-            
+    if(vehicle_r!=0):
+        for t in range (Data_Processing_and_Filtering.number_of_vehicle()):
+            if(vehicle_lane[t]==vehicle_lane[vehicle_r-1]):
+                if(abs(global_time[target_veh]-global_time[t]) < 12000):
+                    delta_y_from_right[t]=vehicle_initial_y_position[t]-vehicle_initial_y_position[vehicle_r-1]
+                
     #print(delta_y_from_right)
     
     try:

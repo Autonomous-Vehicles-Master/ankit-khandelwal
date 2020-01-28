@@ -16,8 +16,8 @@ import Data_Processing_and_Filtering
 import Feature_Matrix_creation
 
 test_set_size=10
-cv_set_size=50
-veh_to_predict=595
+cv_set_size=20
+veh_to_predict=198
 
 #'''
 #data pre-processing
@@ -36,7 +36,7 @@ print("x_hat_max="+str(x_hat_max*0.3048))# feet to meters
 y_vel_hat_max=max(read_data['y_Vel_hat'])
 print("y_vel_hat_max="+str(y_vel_hat_max*0.3048))# feet to meters
 
-min_nu_of_instances=150 # (Prediction time)x10 because frequency is 10 hz. unit is x100ms
+min_nu_of_instances=170 # (Prediction time)x10 because frequency is 10 hz. unit is x100ms
 #Feature_Matrix_creation.number_of_instances()
 
 print("Prediction is done for "+str(min_nu_of_instances/10)+" Seconds")
@@ -62,13 +62,14 @@ vp=0
 
 Loss=0
 
+loss_train = [0 for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
+loss_cv = [0 for t in range(cv_set_size)]
+indexer_train=[t for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
+indexer_cv = [t for t in range(cv_set_size)]
+
 # define, train and crossvalidate model 
 def define_model(): 
     X, Y = Feature_Matrix_creation.Feature_Matrix_creation(1)
-    loss_train = [0 for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
-    loss_cv = [0 for t in range(cv_set_size)]
-    indexer_train=[t for t in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size))]
-    indexer_cv = [t for t in range(cv_set_size)]
     
     # define model
     model = Sequential()
@@ -87,13 +88,15 @@ def define_model():
         print(i)
         X_train = np.reshape(X, (1, X.shape[0], X.shape[1]))
         Y_train = np.reshape(Y, (1, Y.shape[0], Y.shape[1]))
-        history=model.fit(X_train, Y_train, epochs=1, verbose=2, shuffle=False)
+        history=model.fit(X_train, Y_train, epochs=10, verbose=2, shuffle=False)
         print(history.history)
         loss_train[i-1]=history.history['mean_squared_error']
     
     model.save('LSTM.h5')
     #model=load_model('LSTM.h5')
     #Cross Validate
+
+def cv_model(): 
     k=0
     for j in range(Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)-(cv_set_size)+1,
                    Data_Processing_and_Filtering.number_of_vehicle()-(test_set_size)+1,1):
@@ -103,23 +106,29 @@ def define_model():
         Y_train = np.reshape(Y, (1, Y.shape[0], Y.shape[1]))
         loss_cv[k]= model.evaluate(X_train, Y_train, verbose=2)
         k=k+1
-        
-    # Plot training & validation loss values
-    plt.plot(indexer_train,loss_train)
-    plt.plot(indexer_cv,loss_cv, c='r')
-    plt.title('Model loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Test'], loc='upper left')
-    plt.show()
-    
-    return(statistics.mean(loss_train))
+
 
 '''
-Loss=define_model()#0.013821252612655776
-print('Average loss normalized='+str(Loss))
+define_model()
+# Plot training & validation loss values
+plt.rcParams["figure.figsize"] = (20,10)
+plt.plot(indexer_train,loss_train)
+plt.title('Model Training loss')
+plt.ylabel('Loss')
+plt.xlabel('Training Set')
+plt.show()
 '''
 model=load_model('LSTM.h5')
+'''
+cv_model()
+# Plot training & validation loss values
+plt.rcParams["figure.figsize"] = (20,10)
+plt.plot(indexer_cv,loss_cv, c='r')
+plt.title('Model CV loss')
+plt.ylabel('Loss')
+plt.xlabel('Valodation Set')
+plt.show()
+'''
 
 #Predict Results
 X1, Y1 = Feature_Matrix_creation.Feature_Matrix_creation(veh_to_predict)
@@ -146,7 +155,7 @@ x_hat_error_avg_abs=statistics.mean(x_hat_error_abs)
 y_vel_hat_error_avg_abs=statistics.mean(y_vel_hat_error_abs)
 
 print('x_hat_error='+str(x_hat_error_avg_abs*(x_hat_max-x_hat_min)*0.3048))
-print('y_vel_hat_error='+str(y_vel_hat_error_avg_abs*(y_vel_hat_max-y_vel_hat_min)*0.3048))
+print('y_vel_hat_error='+str(y_vel_hat_error_avg_abs*(y_vel_hat_max-y_vel_hat_min)*3.048))
 
 #calculate actual data and update to SI units
 for num in predictions[0,:min_nu_of_instances,0]:
